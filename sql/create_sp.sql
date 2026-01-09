@@ -17,35 +17,48 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    DECLARE @LocationName VARCHAR(255);
+    DECLARE @Region VARCHAR(50);
+    DECLARE @District_Manager VARCHAR(100);
     DECLARE @Lcode VARCHAR(10);
 
-    -- Lookup Lcode from location name
-    SELECT TOP 1 @Lcode = ld.Lcode
+    -- Lookup Location, Region, District Manager, and Lcode from CallPotential location name
+    SELECT TOP 1
+        @LocationName = ld.Location,
+        @Region = UPPER(LEFT(ld.Region, 1)) + LOWER(SUBSTRING(ld.Region, 2, LEN(ld.Region))),
+        @District_Manager = dms.LongName,
+        @Lcode = ld.Lcode
     FROM Connectors.CallPotential.locations_hist lh
     LEFT OUTER JOIN Operations.dbo.Westport_LocationData ld
         ON (ld.CallPotentialLocationID = lh.old_location_id
             OR ld.CallPotentialLocationID = lh.new_location_id)
         AND ld.DateEnd IS NULL
+    LEFT OUTER JOIN Operations.dbo.Westport_DMs dms
+        ON dms.DMID = ld.DMID
     WHERE lh.location_name = @CallPotential_LocationName
     ORDER BY ld.Lcode;
 
-    -- Insert the snapshot
-    INSERT INTO Testing.OutstandingFollowUpSnapshot (
+    -- Insert the snapshot using ld.Location instead of lh.location_name
+    INSERT INTO Operations.Testing.OutstandingFollowUpSnapshot (
         dtSnapshot,
+        Region,
+        District_Manager,
         Lcode,
-        CallPotential_LocationName,
-        UnprocessedFollowUps,
-        UnprocessedCalls
+        Location,
+        Unproc_FollowUps,
+        Unproc_Calls
     )
     VALUES (
         @dtSnapshot,
+        @Region,
+        @District_Manager,
         @Lcode,
-        @CallPotential_LocationName,
+        ISNULL(@LocationName, @CallPotential_LocationName), -- Use ld.Location if found, fallback to CallPotential name
         @UnprocessedFollowUps,
         @UnprocessedCalls
     );
 
-    -- Return the inserted ID
+    -- Return the inserted ID and Lcode
     SELECT SCOPE_IDENTITY() AS InsertedID, @Lcode AS Lcode;
 END;
 GO

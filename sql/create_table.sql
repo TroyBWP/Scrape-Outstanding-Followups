@@ -4,58 +4,39 @@
 USE Operations;
 GO
 
--- Create table if it doesn't exist (safe for production)
-IF OBJECT_ID('Testing.OutstandingFollowUpSnapshot', 'U') IS NULL
+-- Create Testing schema if it doesn't exist
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'Testing')
 BEGIN
-    CREATE TABLE Testing.OutstandingFollowUpSnapshot (
-        ID INT IDENTITY(1,1) PRIMARY KEY,
-        dtSnapshot DATETIME NOT NULL DEFAULT GETDATE(),
-        Lcode VARCHAR(10) NULL,
-        CallPotential_LocationName VARCHAR(255) NOT NULL,
-        UnprocessedFollowUps INT NOT NULL,
-        UnprocessedCalls INT NOT NULL
-    );
+    EXEC('CREATE SCHEMA Testing');
+    PRINT 'Created Testing schema';
 END
-ELSE
-BEGIN
-    -- Add UnprocessedCalls column if it doesn't exist
-    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS
-                   WHERE TABLE_SCHEMA = 'Testing'
-                   AND TABLE_NAME = 'OutstandingFollowUpSnapshot'
-                   AND COLUMN_NAME = 'UnprocessedCalls')
-    BEGIN
-        ALTER TABLE Testing.OutstandingFollowUpSnapshot
-        ADD UnprocessedCalls INT NOT NULL DEFAULT 0;
-        PRINT 'Added UnprocessedCalls column';
-    END
-END
+GO
 
+-- Drop and recreate table for clean schema
 IF OBJECT_ID('Testing.OutstandingFollowUpSnapshot', 'U') IS NOT NULL
 BEGIN
-
-    -- Create indexes for performance (safe for re-runs)
-    IF NOT EXISTS (SELECT 1 FROM sys.indexes
-                   WHERE name = 'IX_OutstandingFollowUpSnapshot_dtSnapshot'
-                   AND object_id = OBJECT_ID('Testing.OutstandingFollowUpSnapshot'))
-    BEGIN
-        CREATE NONCLUSTERED INDEX IX_OutstandingFollowUpSnapshot_dtSnapshot
-        ON Testing.OutstandingFollowUpSnapshot(dtSnapshot DESC);
-        PRINT 'Created dtSnapshot index';
-    END
-
-    IF NOT EXISTS (SELECT 1 FROM sys.indexes
-                   WHERE name = 'IX_OutstandingFollowUpSnapshot_Lcode'
-                   AND object_id = OBJECT_ID('Testing.OutstandingFollowUpSnapshot'))
-    BEGIN
-        CREATE NONCLUSTERED INDEX IX_OutstandingFollowUpSnapshot_Lcode
-        ON Testing.OutstandingFollowUpSnapshot(Lcode);
-        PRINT 'Created Lcode index';
-    END
-
-    PRINT 'Table and indexes ready';
+    DROP TABLE Testing.OutstandingFollowUpSnapshot;
+    PRINT 'Dropped existing table';
 END
-ELSE
-BEGIN
-    PRINT 'Table already exists - no changes made';
-END
+
+CREATE TABLE Testing.OutstandingFollowUpSnapshot (
+    ID INT IDENTITY(1,1) PRIMARY KEY,
+    dtSnapshot DATETIME NOT NULL DEFAULT GETDATE(),
+    Region VARCHAR(50) NULL,
+    District_Manager VARCHAR(100) NULL,
+    Lcode VARCHAR(10) NULL,
+    Location VARCHAR(255) NOT NULL,
+    Unproc_FollowUps INT NOT NULL,
+    Unproc_Calls INT NOT NULL
+);
+
+-- Create indexes for performance
+CREATE NONCLUSTERED INDEX IX_OutstandingFollowUpSnapshot_dtSnapshot
+ON Testing.OutstandingFollowUpSnapshot(dtSnapshot DESC);
+
+PRINT 'Table created successfully';
+
+-- Grant table permissions to TroyAI (since we removed EXECUTE AS)
+GRANT SELECT, INSERT, UPDATE, DELETE ON Testing.OutstandingFollowUpSnapshot TO TroyAI;
+PRINT 'Granted table permissions to TroyAI';
 GO

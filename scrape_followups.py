@@ -223,15 +223,20 @@ class CallPotentialScraper:
 
             # Truncate table BEFORE processing any records
             print("Truncating table for fresh snapshot...")
-            cursor.execute("EXEC Testing.TruncateOutstandingFollowUpSnapshot")
-            self.db_connection.commit()
-            print("Table truncated")
+            try:
+                cursor.execute("EXEC Testing.TruncateOutstandingFollowUpSnapshot")
+                self.db_connection.commit()
+                print("Table truncated successfully")
+            except Exception as e:
+                print(f"ERROR during truncate: {e}")
+                raise
 
+            print(f"Starting to insert {len(data)} records...")
             inserted = 0
             failed = 0
             locations_without_lcode = []
 
-            for record in data:
+            for idx, record in enumerate(data, 1):
                 location_name = record['location']
                 followups = record['followups']
                 unprocessed = record['unprocessed']
@@ -249,22 +254,34 @@ class CallPotentialScraper:
                         _, lcode = result
                         if lcode is None:
                             locations_without_lcode.append(location_name)
-                        inserted += 1
+                            # Skip inserting records without Lcode - rollback this insert
+                            self.db_connection.rollback()
+                            failed += 1
+                            continue
+                        else:
+                            inserted += 1
+                            # CRITICAL: Must commit after each stored procedure call
+                            self.db_connection.commit()
+
+                    # Progress indicator every 50 records
+                    if idx % 50 == 0:
+                        print(f"  Processed {idx}/{len(data)} records...")
 
                 except Exception as e:
                     print(f"Error inserting record for '{location_name}': {e}")
+                    self.db_connection.rollback()  # Rollback failed insert
                     failed += 1
 
-            # Commit all successful inserts at once
-            if inserted > 0:
-                self.db_connection.commit()
-                print(f"\nSaved {inserted} records to database ({failed} failed)")
-            else:
-                print(f"\nNo records inserted ({failed} failed)")
+            # Summary
+            print(f"\nInsert complete: {inserted} records saved, {failed} failed")
 
+        except Exception as e:
+            print(f"FATAL ERROR in save_to_database: {e}")
+            raise
         finally:
             if cursor:
                 cursor.close()
+                print("Database cursor closed")
 
         if locations_without_lcode:
             print(f"\nWarning: {len(locations_without_lcode)} location(s) without Lcode:")
