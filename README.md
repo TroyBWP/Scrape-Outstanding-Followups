@@ -71,6 +71,40 @@ The script will:
 - Inserts snapshot with all metrics
 - Returns InsertedID and Lcode
 
+## Testing
+
+### Run Unit Tests
+
+**Basic tests** (credentials, database, stored procedure):
+```bash
+python tests/test_scraper.py
+```
+
+**Extended tests** (web scraping, error handling, edge cases):
+```bash
+pytest tests/test_scraper_extended.py -v
+```
+
+Or run both:
+```bash
+python tests/test_scraper.py && pytest tests/test_scraper_extended.py -v
+```
+
+### Test Coverage
+
+**Basic Tests:**
+- Credential retrieval from Windows Credential Manager
+- Database connection and schema validation
+- Stored procedure execution and data insertion
+- Scraper initialization
+
+**Extended Tests:**
+- Table finding logic across iframes
+- Data parsing (integers, location names, malformed data)
+- Error handling (login failures, database errors, network issues)
+- Edge cases (zero values, missing Lcodes, null data)
+- Transaction handling (commit only on success)
+
 ## Troubleshooting
 
 **Login fails:**
