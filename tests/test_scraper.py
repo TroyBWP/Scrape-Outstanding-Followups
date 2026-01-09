@@ -22,7 +22,7 @@ def test_credentials():
     assert username is not None, "Username not found in keyring"
     assert password is not None, "Password not found in keyring"
 
-    print(f"[PASS] Username retrieved: {username}")
+    print(f"[PASS] Username retrieved: {username[:3]}***")
     print("[PASS] Password retrieved: [hidden]")
     print("PASS: Credentials successfully retrieved")
 
@@ -114,51 +114,57 @@ def test_stored_procedure_execution():
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
-    # Test insert (truncate is now handled separately in the scraper)
-    test_time = datetime.now()
-    test_location = "TEST_LOCATION_UNIT_TEST"
+    try:
+        # Test insert (truncate is now handled separately in the scraper)
+        test_time = datetime.now()
+        test_location = "TEST_LOCATION_UNIT_TEST"
 
-    cursor.execute(
-        "EXEC Testing.GetOutstandingCPFollowUps ?, ?, ?, ?",
-        (test_time, test_location, 10, 5)
-    )
+        cursor.execute(
+            "EXEC Testing.GetOutstandingCPFollowUps ?, ?, ?, ?",
+            (test_time, test_location, 10, 5)
+        )
 
-    result = cursor.fetchone()
-    assert result is not None, "Stored procedure did not return result"
+        result = cursor.fetchone()
+        assert result is not None, "Stored procedure did not return result"
 
-    inserted_id = result[0]
-    lcode = result[1]
+        inserted_id = result[0]
+        lcode = result[1]
 
-    print(f"[OK] Stored procedure executed successfully")
-    print(f"[OK] Inserted ID: {inserted_id}")
-    print(f"[OK] Lcode: {lcode if lcode else 'NULL (expected for test location)'}")
+        print(f"[OK] Stored procedure executed successfully")
+        print(f"[OK] Inserted ID: {inserted_id}")
+        print(f"[OK] Lcode: {lcode if lcode else 'NULL (expected for test location)'}")
 
-    conn.commit()
+        conn.commit()
 
-    # Verify data was inserted
-    cursor.execute("""
-        SELECT TOP 1 *
-        FROM Testing.OutstandingFollowUpSnapshot
-        WHERE CallPotential_LocationName = ?
-        ORDER BY ID DESC
-    """, (test_location,))
+        # Verify data was inserted
+        cursor.execute("""
+            SELECT TOP 1 *
+            FROM Testing.OutstandingFollowUpSnapshot
+            WHERE CallPotential_LocationName = ?
+            ORDER BY ID DESC
+        """, (test_location,))
 
-    row = cursor.fetchone()
-    assert row is not None, "Test record not found in database"
-    assert row[4] == 10, f"UnprocessedFollowUps mismatch: expected 10, got {row[4]}"
-    assert row[5] == 5, f"UnprocessedCalls mismatch: expected 5, got {row[5]}"
+        row = cursor.fetchone()
+        assert row is not None, "Test record not found in database"
+        assert row[4] == 10, f"UnprocessedFollowUps mismatch: expected 10, got {row[4]}"
+        assert row[5] == 5, f"UnprocessedCalls mismatch: expected 5, got {row[5]}"
 
-    print("[OK] Data verified in database")
-    print(f"  UnprocessedFollowUps: {row[4]}")
-    print(f"  UnprocessedCalls: {row[5]}")
+        print("[OK] Data verified in database")
+        print(f"  UnprocessedFollowUps: {row[4]}")
+        print(f"  UnprocessedCalls: {row[5]}")
 
-    # Clean up test data
-    cursor.execute("DELETE FROM Testing.OutstandingFollowUpSnapshot WHERE CallPotential_LocationName = ?", (test_location,))
-    conn.commit()
-    print("[OK] Test data cleaned up")
+    finally:
+        # Clean up test data (runs even if test fails)
+        try:
+            cursor.execute("DELETE FROM Testing.OutstandingFollowUpSnapshot WHERE CallPotential_LocationName = ?", (test_location,))
+            conn.commit()
+            print("[OK] Test data cleaned up")
+        except Exception as cleanup_error:
+            print(f"[WARN] Cleanup failed: {cleanup_error}")
 
-    cursor.close()
-    conn.close()
+        cursor.close()
+        conn.close()
+
     print("PASS: Stored procedure execution validated")
 
 
@@ -177,7 +183,7 @@ async def test_scraper_initialization():
     scraper._get_credentials()
     assert scraper.username is not None, "Username not retrieved"
     assert scraper.password is not None, "Password not retrieved"
-    print(f"[OK] Credentials loaded: {scraper.username}")
+    print(f"[OK] Credentials loaded: {scraper.username[:3]}***")
 
     # Test database connection
     scraper._get_db_connection()

@@ -108,7 +108,6 @@ class CallPotentialScraper:
                     if 'LOCATION' in header_clean and 'FOLLOW' in header_clean:
                         print(f"  Found target table in frame {idx + 1}!")
                         print(f"  Headers: {header_texts}")
-                        target_frame = frame
                         table = t
                         break
 
@@ -247,7 +246,7 @@ class CallPotentialScraper:
                     # Get result (InsertedID and Lcode)
                     result = cursor.fetchone()
                     if result:
-                        inserted_id, lcode = result
+                        _, lcode = result
                         if lcode is None:
                             locations_without_lcode.append(location_name)
                         inserted += 1
@@ -273,8 +272,6 @@ class CallPotentialScraper:
                 print(f"  - {loc}")
             if len(locations_without_lcode) > 10:
                 print(f"  ... and {len(locations_without_lcode) - 10} more")
-
-        cursor.close()
 
     async def run(self):
         """Main execution flow"""

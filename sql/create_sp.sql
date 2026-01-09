@@ -23,10 +23,10 @@ BEGIN
     SELECT TOP 1 @Lcode = ld.Lcode
     FROM Connectors.CallPotential.locations_hist lh
     LEFT OUTER JOIN Operations.dbo.Westport_LocationData ld
-        ON ld.CallPotentialLocationID = lh.old_location_id
-        OR ld.CallPotentialLocationID = lh.new_location_id
-    WHERE lh.location_name = @CallPotential_LocationName
+        ON (ld.CallPotentialLocationID = lh.old_location_id
+            OR ld.CallPotentialLocationID = lh.new_location_id)
         AND ld.DateEnd IS NULL
+    WHERE lh.location_name = @CallPotential_LocationName
     ORDER BY lh.location_id DESC; -- Most recent location_id if multiple matches
 
     -- Insert the snapshot
