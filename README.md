@@ -48,9 +48,10 @@ The script will:
 1. Retrieve credentials from Windows Credential Manager
 2. Launch a headless Chromium browser
 3. Navigate to CallPotential dashboard and login
-4. Scrape the Outstanding Follow-Ups table (Location & Follow-Ups columns)
-5. Join location names with `Westport_LocationData` to get `Lcode`
-6. Insert snapshot into `Operations.Testing.OutstandingFollowUpSnapshot`
+4. Scrape the Outstanding Follow-Ups table (Location, Follow-Ups, and Unprocessed columns)
+5. Truncate table for fresh snapshot
+6. Join location names with `Westport_LocationData` to get `Lcode`
+7. Insert snapshot into `Operations.Testing.OutstandingFollowUpSnapshot` via stored procedure
 
 ## Database Schema
 
@@ -63,6 +64,12 @@ The script will:
 | Lcode | VARCHAR(10) | Location code from Westport_LocationData |
 | CallPotential_LocationName | VARCHAR(255) | Location name from CallPotential |
 | UnprocessedFollowUps | INT | Number of outstanding follow-ups |
+| UnprocessedCalls | INT | Number of unprocessed calls |
+
+**Stored Procedure:** `Testing.GetOutstandingCPFollowUps`
+- Automatically looks up Lcode from location name
+- Inserts snapshot with all metrics
+- Returns InsertedID and Lcode
 
 ## Troubleshooting
 
