@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Playwright
+*_screenshot*.png
+error_screenshot*.png
+empty_table_debug.png
+no_table_found.png
+page_source.html
+01_login_page.png
+02_credentials_filled.png
+03_dashboard.png
+table_structure.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Credentials - DO NOT COMMIT
+scripts/add_credentials.py
+
+# Test outputs
+*.log
