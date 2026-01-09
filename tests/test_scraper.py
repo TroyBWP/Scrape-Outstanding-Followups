@@ -156,7 +156,7 @@ def test_stored_procedure_execution():
     finally:
         # Clean up test data (runs even if test fails)
         try:
-            cursor.execute("DELETE FROM Testing.OutstandingFollowUpSnapshot WHERE CallPotential_LocationName = ?", (test_location,))
+            cursor.execute("EXEC Testing.DeleteTestFollowUpRecords ?", (test_location,))
             conn.commit()
             print("[OK] Test data cleaned up")
         except Exception as cleanup_error:
