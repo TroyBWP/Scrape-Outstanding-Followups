@@ -14,7 +14,18 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    TRUNCATE TABLE Testing.OutstandingFollowUpSnapshot;
+    BEGIN TRY
+        TRUNCATE TABLE Testing.OutstandingFollowUpSnapshot;
+        RETURN 0; -- Success
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+        RETURN -1; -- Failure
+    END CATCH
 END;
 GO
 
@@ -36,8 +47,21 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DELETE FROM Testing.OutstandingFollowUpSnapshot
-    WHERE CallPotential_LocationName = @CallPotential_LocationName;
+    BEGIN TRY
+        DELETE FROM Testing.OutstandingFollowUpSnapshot
+        WHERE CallPotential_LocationName = @CallPotential_LocationName;
+
+        -- Return the number of rows deleted for test verification
+        RETURN @@ROWCOUNT;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+        RETURN -1; -- Failure
+    END CATCH
 END;
 GO
 

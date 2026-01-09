@@ -33,14 +33,26 @@ END
 IF OBJECT_ID('Testing.OutstandingFollowUpSnapshot', 'U') IS NOT NULL
 BEGIN
 
-    -- Create indexes for performance
-    CREATE NONCLUSTERED INDEX IX_OutstandingFollowUpSnapshot_dtSnapshot
-    ON Testing.OutstandingFollowUpSnapshot(dtSnapshot DESC);
+    -- Create indexes for performance (safe for re-runs)
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes
+                   WHERE name = 'IX_OutstandingFollowUpSnapshot_dtSnapshot'
+                   AND object_id = OBJECT_ID('Testing.OutstandingFollowUpSnapshot'))
+    BEGIN
+        CREATE NONCLUSTERED INDEX IX_OutstandingFollowUpSnapshot_dtSnapshot
+        ON Testing.OutstandingFollowUpSnapshot(dtSnapshot DESC);
+        PRINT 'Created dtSnapshot index';
+    END
 
-    CREATE NONCLUSTERED INDEX IX_OutstandingFollowUpSnapshot_Lcode
-    ON Testing.OutstandingFollowUpSnapshot(Lcode);
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes
+                   WHERE name = 'IX_OutstandingFollowUpSnapshot_Lcode'
+                   AND object_id = OBJECT_ID('Testing.OutstandingFollowUpSnapshot'))
+    BEGIN
+        CREATE NONCLUSTERED INDEX IX_OutstandingFollowUpSnapshot_Lcode
+        ON Testing.OutstandingFollowUpSnapshot(Lcode);
+        PRINT 'Created Lcode index';
+    END
 
-    PRINT 'Table and indexes created successfully';
+    PRINT 'Table and indexes ready';
 END
 ELSE
 BEGIN
