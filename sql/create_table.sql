@@ -15,6 +15,23 @@ BEGIN
         UnprocessedFollowUps INT NOT NULL,
         UnprocessedCalls INT NOT NULL
     );
+END
+ELSE
+BEGIN
+    -- Add UnprocessedCalls column if it doesn't exist
+    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+                   WHERE TABLE_SCHEMA = 'Testing'
+                   AND TABLE_NAME = 'OutstandingFollowUpSnapshot'
+                   AND COLUMN_NAME = 'UnprocessedCalls')
+    BEGIN
+        ALTER TABLE Testing.OutstandingFollowUpSnapshot
+        ADD UnprocessedCalls INT NOT NULL DEFAULT 0;
+        PRINT 'Added UnprocessedCalls column';
+    END
+END
+
+IF OBJECT_ID('Testing.OutstandingFollowUpSnapshot', 'U') IS NOT NULL
+BEGIN
 
     -- Create indexes for performance
     CREATE NONCLUSTERED INDEX IX_OutstandingFollowUpSnapshot_dtSnapshot

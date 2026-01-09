@@ -26,8 +26,7 @@ BEGIN
         ON (ld.CallPotentialLocationID = lh.old_location_id
             OR ld.CallPotentialLocationID = lh.new_location_id)
         AND ld.DateEnd IS NULL
-    WHERE lh.location_name = @CallPotential_LocationName
-    ORDER BY lh.location_id DESC; -- Most recent location_id if multiple matches
+    WHERE lh.location_name = @CallPotential_LocationName;
 
     -- Insert the snapshot
     INSERT INTO Testing.OutstandingFollowUpSnapshot (

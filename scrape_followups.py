@@ -223,7 +223,7 @@ class CallPotentialScraper:
 
             # Truncate table BEFORE processing any records
             print("Truncating table for fresh snapshot...")
-            cursor.execute("TRUNCATE TABLE Testing.OutstandingFollowUpSnapshot")
+            cursor.execute("EXEC Testing.TruncateOutstandingFollowUpSnapshot")
             self.db_connection.commit()
             print("Table truncated")
 
