@@ -87,6 +87,15 @@ The script will:
 - Data still gets inserted, but Lcode will be NULL
 - May need to update location mapping in `Westport_LocationData`
 
+## Security
+
+This scraper follows security best practices:
+- **Credentials**: Stored in Windows Credential Manager (encrypted at rest)
+- **SQL Injection Protection**: All database operations use parameterized queries via stored procedures
+- **Least Privilege**: Database account has EXECUTE permission only on the stored procedure
+- **No Secrets in Code**: No hardcoded credentials, tokens, or API keys
+- **Code Review**: Approved by Xavier (technical) and Mira (security)
+
 ## Scheduling
 
 To run this on a schedule, use Windows Task Scheduler:
