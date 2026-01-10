@@ -5,22 +5,29 @@ Tests credential retrieval, database connection, and scraping logic
 
 import asyncio
 import pyodbc
-import keyring
+import sys
 from datetime import datetime
+
+# Use PowerShell SecretManagement vault for credentials
+sys.path.insert(0, r'C:\Users\troyb\OneDrive - Westport Properties\Desktop\the-toolshed\expense-project\shared')
+from vault_credentials import get_password, get_sql_password
+
+# Add parent directory to import scrape_followups
+sys.path.insert(0, r'C:\Users\troyb\OneDrive - Westport Properties\Desktop\the-toolshed-new\Scrape Outstanding Follow Ups')
 from scrape_followups import CallPotentialScraper
 
 
 def test_credentials():
-    """Test that credentials can be retrieved from keyring"""
+    """Test that credentials can be retrieved from PowerShell vault"""
     print("\n" + "="*60)
     print("TEST 1: Credential Retrieval")
     print("="*60)
 
-    username = keyring.get_password('CallPotential', 'Username')
-    password = keyring.get_password('CallPotential', 'Password')
+    username = get_password('CallPotential', 'Username')
+    password = get_password('CallPotential', 'Password')
 
-    assert username is not None, "Username not found in keyring"
-    assert password is not None, "Password not found in keyring"
+    assert username is not None, "Username not found in vault"
+    assert password is not None, "Password not found in vault"
 
     print(f"[PASS] Username retrieved: {username[:3]}***")
     print("[PASS] Password retrieved: [hidden]")
@@ -33,8 +40,7 @@ def test_database_connection():
     print("TEST 2: Database Connection & Stored Procedure")
     print("="*60)
 
-    password = keyring.get_password('AIDevSQLDatabase', 'TroyAI')
-    assert password is not None, "Database password not found in keyring"
+    password = get_sql_password()
 
     conn_str = (
         f'DRIVER={{ODBC Driver 17 for SQL Server}};'
@@ -102,7 +108,7 @@ def test_stored_procedure_execution():
     print("TEST 3: Stored Procedure Execution")
     print("="*60)
 
-    password = keyring.get_password('AIDevSQLDatabase', 'TroyAI')
+    password = get_sql_password()
     conn_str = (
         f'DRIVER={{ODBC Driver 17 for SQL Server}};'
         f'SERVER=wpicsql01.westport.dom;'

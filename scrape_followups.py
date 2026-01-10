@@ -5,10 +5,13 @@ Saves snapshot to Operations.Testing.OutstandingFollowUpSnapshot
 
 import asyncio
 import pyodbc
-import keyring
+import sys
 from datetime import datetime
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
-import sys
+
+# Use PowerShell SecretManagement vault for credentials
+sys.path.insert(0, r'C:\Users\troyb\OneDrive - Westport Properties\Desktop\the-toolshed\expense-project\shared')
+from vault_credentials import get_password, get_sql_password
 
 
 class CallPotentialScraper:
@@ -21,27 +24,23 @@ class CallPotentialScraper:
         self.db_connection = None
 
     def _get_credentials(self):
-        """Retrieve CallPotential credentials from Windows Credential Manager"""
-        print("Retrieving credentials from Windows Credential Manager...")
-        self.username = keyring.get_password('CallPotential', 'Username')
-        self.password = keyring.get_password('CallPotential', 'Password')
+        """Retrieve CallPotential credentials from PowerShell SecretManagement vault"""
+        print("Retrieving credentials from PowerShell vault...")
+        self.username = get_password('CallPotential', 'Username')
+        self.password = get_password('CallPotential', 'Password')
 
         if not self.username or not self.password:
             raise ValueError(
-                "CallPotential credentials not found in Windows Credential Manager.\n"
+                "CallPotential credentials not found in PowerShell vault.\n"
                 "Please store credentials with:\n"
-                "  Service: CallPotential\n"
-                "  Username: Username (for the actual username)\n"
-                "  Username: Password (for the actual password)"
+                "  Set-Secret -Name 'CallPotential:Username' -Secret '<username>' -Vault WestportVault\n"
+                "  Set-Secret -Name 'CallPotential:Password' -Secret '<password>' -Vault WestportVault"
             )
 
     def _get_db_connection(self):
         """Establish SQL Server connection"""
         print("Connecting to SQL Server...")
-        password = keyring.get_password('AIDevSQLDatabase', 'TroyAI')
-
-        if not password:
-            raise ValueError("Database credentials not found in Windows Credential Manager")
+        password = get_sql_password()  # Uses vault_credentials
 
         conn_str = (
             f'DRIVER={{ODBC Driver 17 for SQL Server}};'
@@ -258,6 +257,7 @@ class CallPotentialScraper:
 
             print(f"Starting to insert {len(data)} records...")
             inserted = 0
+            skipped = 0
             failed = 0
             locations_without_lcode = []
 
@@ -281,7 +281,7 @@ class CallPotentialScraper:
                             locations_without_lcode.append(location_name)
                             # Skip inserting records without Lcode - rollback this insert
                             self.db_connection.rollback()
-                            failed += 1
+                            skipped += 1
                             continue
                         else:
                             inserted += 1
@@ -298,7 +298,7 @@ class CallPotentialScraper:
                     failed += 1
 
             # Summary
-            print(f"\nInsert complete: {inserted} records saved, {failed} failed")
+            print(f"\nInsert complete: {inserted} saved, {skipped} skipped (no Lcode), {failed} failed")
 
         except Exception as e:
             print(f"FATAL ERROR in save_to_database: {e}")
